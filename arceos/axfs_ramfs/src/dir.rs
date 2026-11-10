@@ -165,6 +165,38 @@ impl VfsNodeOps for DirNode {
         }
     }
 
+    fn rename(&self, src_path: &str, dst_path: &str) -> VfsResult {
+        // 1. 取出两个路径的最后一段名字
+        let src_name = src_path.rsplit('/').next().unwrap_or(src_path);
+        let dst_name = dst_path.rsplit('/').next().unwrap_or(dst_path);
+
+        // 2. 检查文件名是否合法
+        if src_name.is_empty()
+            || dst_name.is_empty()
+            || src_name == "."
+            || src_name == ".."
+            || dst_name == "."
+            || dst_name == ".." {
+            return Err(VfsError::InvalidInput);
+        }
+
+        // 3. 获取目录的写锁
+        let mut children = self.children.write();
+        // 4. 检查源文件是否存在
+        if !children.contains_key(src_name) {
+            return Err(VfsError::NotFound);
+        }
+        // 检查目标文件是否已经存在
+        if children.contains_key(dst_name) {
+            return Err(VfsError::AlreadyExists);
+        }
+        // 5. 删除旧文件名映射，取出对应节点
+        let node = children.remove(src_name).unwrap();
+        // 6. 使用新文件名重新插入同一个节点
+        children.insert(dst_name.into(), node);
+        Ok(())
+    }
+
     axfs_vfs::impl_vfs_dir_default! {}
 }
 
