@@ -2,8 +2,8 @@
   "schema": 1,
   "courseId": 2078,
   "repository": "LearningOS/2026a-arceos-SlieNce810",
-  "commit": "9c351777a29b787d69ec1c80276ad595b7aa5a9e",
-  "score": 200,
+  "commit": "cd27b86d9e460001916161d18088905eff73d274",
+  "score": 300,
   "totalScore": 600,
   "exercises": [
     {
@@ -23,8 +23,8 @@
     {
       "name": "alt_alloc",
       "max": 100,
-      "score": 0,
-      "status": "fail",
+      "score": 100,
+      "status": "pass",
       "exitCode": 0
     },
     {
@@ -50,9 +50,9 @@
     }
   ],
   "student": "SlieNce810",
-  "runId": "42763064008",
+  "runId": "42827280881",
   "runAttempt": "1",
   "upload": {
-    "status": "accepted"
+    "status": "pending"
   }
 }
