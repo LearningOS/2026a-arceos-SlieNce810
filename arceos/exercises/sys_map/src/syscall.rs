@@ -8,6 +8,7 @@ use axtask::current;
 use axtask::TaskExtRef;
 use axhal::paging::MappingFlags;
 use arceos_posix_api as api;
+use memory_addr::{PAGE_SIZE_4K, VirtAddrRange};
 
 const SYS_IOCTL: usize = 29;
 const SYS_OPENAT: usize = 56;
@@ -100,7 +101,7 @@ bitflags::bitflags! {
 fn handle_syscall(tf: &TrapFrame, syscall_num: usize) -> isize {
     ax_println!("handle_syscall [{}] ...", syscall_num);
     let ret = match syscall_num {
-         SYS_IOCTL => sys_ioctl(tf.arg0() as _, tf.arg1() as _, tf.arg2() as _) as _,
+        SYS_IOCTL => sys_ioctl(tf.arg0() as _, tf.arg1() as _, tf.arg2() as _) as _,
         SYS_SET_TID_ADDRESS => sys_set_tid_address(tf.arg0() as _),
         SYS_OPENAT => sys_openat(tf.arg0() as _, tf.arg1() as _, tf.arg2() as _, tf.arg3() as _),
         SYS_CLOSE => sys_close(tf.arg0() as _),
@@ -140,7 +141,102 @@ fn sys_mmap(
     fd: i32,
     _offset: isize,
 ) -> isize {
-    unimplemented!("no sys_mmap!");
+    let result = (|| -> Result<usize, LinuxError> {
+        // 1. 参数检查
+        if length == 0 {
+            return Err(LinuxError::EINVAL);
+        }
+
+        // 文件偏移必须非负且按页对齐
+        if _offset < 0 || (_offset as usize) % PAGE_SIZE_4K != 0 {
+            return Err(LinuxError::EINVAL);
+        }
+
+        // 2. 将映射长度向上对齐到 4 KiB
+        let size = length
+            .checked_add(PAGE_SIZE_4K - 1)
+            .ok_or(LinuxError::ENOMEM)?
+            & !(PAGE_SIZE_4K - 1);
+
+        // 3. 将 prot 转换为 MappingFlags
+        let map_flags: MappingFlags =
+            MmapProt::from_bits_truncate(prot).into();
+
+        // 4. 确定非零的 hint 地址
+        let hint = if addr.is_null() {
+            0x1000_0000usize
+        } else {
+            (addr as usize)
+                .checked_add(PAGE_SIZE_4K - 1)
+                .ok_or(LinuxError::ENOMEM)?
+                & !(PAGE_SIZE_4K - 1)
+        };
+
+        // 5. 创建零初始化的文件缓冲区
+        let mut buffer =alloc::vec![0u8; length];
+        buffer
+            .try_reserve_exact(length)
+            .map_err(|_| LinuxError::ENOMEM)?;
+        buffer.resize(length, 0);
+
+        // 6. 从指定文件偏移读取内容
+        let ret = api::sys_lseek(fd, _offset as _, 0); // whence = 0 即 SEEK_SET
+        if ret < 0 {
+            return Err(LinuxError::try_from((-ret) as i32).unwrap_or(LinuxError::EIO));
+        }
+
+        let mut total = 0usize;
+        while total < length {
+            let n = api::sys_read(
+                fd,
+                buffer[total..].as_mut_ptr() as *mut c_void,
+                length - total,
+            );
+            if n < 0 {
+                return Err(LinuxError::try_from((-n) as i32).unwrap_or(LinuxError::EIO));
+            }
+            if n == 0 {
+                break; // EOF，buffer 剩余部分本来就是 0
+            }
+            total += n as usize;
+        }
+
+        //7. 获取当前任务的用户空间
+        let curr = current();
+        let mut aspace = curr.task_ext().aspace.lock();
+
+        // 8. 构造地址搜索范围
+        let limit = VirtAddrRange::from_start_size(
+            aspace.base(),
+            aspace.size(),
+        );
+
+        // 9. 查找可用虚拟地址
+        let start = aspace
+            .find_free_area(hint.into(), size, limit)
+            .ok_or(LinuxError::ENOMEM)?;
+
+        // 10. 分配物理页面并建立映射
+        aspace
+            .map_alloc(start, size, map_flags, true)
+            .map_err(|_| LinuxError::ENOMEM)?;
+
+        // 11. 将文件内容写入映射区域
+        if let Err(err) = aspace.write(start, &buffer) {
+            // 写入失败则回滚映射
+            let _ = aspace.unmap(start, size);
+            return Err(LinuxError::from(err));
+        }
+
+        // 12. 成功返回映射起始地址
+        Ok(start.as_usize())
+    })();
+
+    // 13. 转换为 Linux syscall 返回格式
+    match result {
+        Ok(addr) => addr as isize,
+        Err(err) => -err.code() as isize,
+    }
 }
 
 fn sys_openat(dfd: c_int, fname: *const c_char, flags: c_int, mode: api::ctypes::mode_t) -> isize {

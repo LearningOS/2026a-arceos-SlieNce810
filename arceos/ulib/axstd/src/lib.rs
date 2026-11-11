@@ -54,8 +54,16 @@
 extern crate alloc;
 
 #[cfg(feature = "alloc")]
+pub mod collections {
+    // 保留 alloc 原有的集合类型
+    pub use alloc::collections::*;
+    // 新增 HashMap 和 HashSet
+    pub use hashbrown::{HashMap, HashSet};
+}
+
+#[cfg(feature = "alloc")]
 #[doc(no_inline)]
-pub use alloc::{boxed, collections, format, string, vec};
+pub use alloc::{boxed, format, string, vec};
 
 #[doc(no_inline)]
 pub use core::{arch, cell, cmp, hint, marker, mem, ops, ptr, slice, str};

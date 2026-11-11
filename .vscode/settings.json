@@ -2,5 +2,8 @@
   "rust-analyzer.linkedProjects": ["arceos/Cargo.toml"],
   "rust-analyzer.cargo.target": "riscv64gc-unknown-none-elf",
   "rust-analyzer.cargo.allTargets": false,
-  "rust-analyzer.cargo.features": ["axstd"]
+  "rust-analyzer.cargo.features": ["axstd"],
+  // 使用与本仓库 rust-toolchain.toml 锁定的 nightly-2024-09-04 配套的 rust-analyzer。
+  // 新版扩展的 client 与旧工具链自带的 proc-macro server 协议不兼容，会 panic。
+  "rust-analyzer.server.path": "~/.rustup/toolchains/nightly-2024-09-04-x86_64-unknown-linux-gnu/bin/rust-analyzer"
 }
