@@ -17,7 +17,7 @@ mod sbi;
 mod loader;
 
 use vcpu::VmCpuRegisters;
-use riscv::register::{scause, sstatus, stval};
+use riscv::register::{scause, sie, sstatus, stval};
 use csrs::defs::hstatus;
 use tock_registers::LocalRegisterCopy;
 use csrs::{RiscvCsrTrait, CSR};
@@ -69,10 +69,28 @@ fn prepare_vm_pgtable(ept_root: PhysAddr) {
 
 fn run_guest(ctx: &mut VmCpuRegisters) -> bool {
     unsafe {
+        // 客体运行期间屏蔽 HS-level 中断源。V=1 时 HS 中断不受
+        // sstatus.SIE 约束，必须在 sie 里关掉，否则 timer tick 会
+        // 跳到 stvec = _guest_exit，破坏上下文恢复流程。
+        sie::clear_stimer();
+        sie::clear_sext();
+        sie::clear_ssoft();
+
         _run_guest(ctx);
     }
 
-    vmexit_handler(ctx)
+    // 先读取并处理 VM exit 原因，避免尚未处理的 pending 中断覆盖 scause。
+    let exited = vmexit_handler(ctx);
+
+    unsafe {
+        // 此时 _guest_exit 已恢复宿主 stvec/sscratch，重新开中断是安全的；
+        // pending 的 timer 中断会进入 ArceOS 正常的处理函数并重新 arm。
+        sie::set_stimer();
+        sie::set_sext();
+        sie::set_ssoft();
+    }
+
+    exited
 }
 
 #[allow(unreachable_code)]
