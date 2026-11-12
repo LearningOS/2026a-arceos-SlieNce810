@@ -2,8 +2,8 @@
   "schema": 1,
   "courseId": 2078,
   "repository": "LearningOS/2026a-arceos-SlieNce810",
-  "commit": "cd27b86d9e460001916161d18088905eff73d274",
-  "score": 300,
+  "commit": "49d8c538e4b1f83abb893aca1fad291f2875640a",
+  "score": 500,
   "totalScore": 600,
   "exercises": [
     {
@@ -30,15 +30,15 @@
     {
       "name": "support_hashmap",
       "max": 100,
-      "score": 0,
-      "status": "fail",
-      "exitCode": 2
+      "score": 100,
+      "status": "pass",
+      "exitCode": 0
     },
     {
       "name": "sys_map",
       "max": 100,
-      "score": 0,
-      "status": "fail",
+      "score": 100,
+      "status": "pass",
       "exitCode": 0
     },
     {
@@ -50,9 +50,9 @@
     }
   ],
   "student": "SlieNce810",
-  "runId": "42827280881",
-  "runAttempt": "1",
+  "runId": "43034710427",
+  "runAttempt": "2",
   "upload": {
-    "status": "accepted"
+    "status": "pending"
   }
 }
