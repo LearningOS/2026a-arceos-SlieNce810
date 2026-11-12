@@ -2,8 +2,8 @@
   "schema": 1,
   "courseId": 2078,
   "repository": "LearningOS/2026a-arceos-SlieNce810",
-  "commit": "49d8c538e4b1f83abb893aca1fad291f2875640a",
-  "score": 500,
+  "commit": "f7c59be04c503b5bb1865dccf17c263e75c314ee",
+  "score": 600,
   "totalScore": 600,
   "exercises": [
     {
@@ -44,15 +44,15 @@
     {
       "name": "simple_hv",
       "max": 100,
-      "score": 0,
-      "status": "fail",
+      "score": 100,
+      "status": "pass",
       "exitCode": 0
     }
   ],
   "student": "SlieNce810",
-  "runId": "43034710427",
-  "runAttempt": "2",
+  "runId": "43153997195",
+  "runAttempt": "1",
   "upload": {
-    "status": "accepted"
+    "status": "pending"
   }
 }
