@@ -2,7 +2,7 @@
   "schema": 1,
   "courseId": 2078,
   "repository": "LearningOS/2026a-arceos-SlieNce810",
-  "commit": "f7c59be04c503b5bb1865dccf17c263e75c314ee",
+  "commit": "56d42658b4d2bc6536658b73f340a1ba1d7d0711",
   "score": 600,
   "totalScore": 600,
   "exercises": [
@@ -50,9 +50,9 @@
     }
   ],
   "student": "SlieNce810",
-  "runId": "43153997195",
+  "runId": "43156304415",
   "runAttempt": "1",
   "upload": {
-    "status": "accepted"
+    "status": "pending"
   }
 }
